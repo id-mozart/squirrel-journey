@@ -54,7 +54,7 @@ const FUR_FRAG = /* glsl */`
 }
 `;
 
-function furMaterial({ top, belly, bellyDir = [0, -1, 0.2], bellyAmt = 1, furLen = 0.02, density = 40, tipLight = 0.5, comb = [0, 0, -0.6] }) {
+export function furMaterial({ top, belly, bellyDir = [0, -1, 0.2], bellyAmt = 1, furLen = 0.02, density = 40, tipLight = 0.5, comb = [0, 0, -0.6] }) {
   const mat = new THREE.MeshStandardMaterial({ roughness: 0.88, metalness: 0, alphaTest: 0.5, alphaToCoverage: true, side: THREE.FrontSide });
   const uniforms = {
     uShells: { value: SHELLS }, uFurLen: { value: furLen }, uComb: { value: new THREE.Vector3(...comb) }, uTime: { value: 0 },
@@ -76,7 +76,7 @@ function furMaterial({ top, belly, bellyDir = [0, -1, 0.2], bellyAmt = 1, furLen
   return mat;
 }
 
-function ellipsoidGeometry(rx, ry, rz, detail = 3, deform = null) {
+export function ellipsoidGeometry(rx, ry, rz, detail = 3, deform = null) {
   let g = new THREE.IcosahedronGeometry(1, detail);
   g = mergeVertices(g);
   const pos = g.attributes.position;
@@ -107,7 +107,7 @@ export class Squirrel {
     this.furMats = [];
     this.time = 0;
 
-    const top = [0.2, 0.19, 0.22], belly = [0.8, 0.8, 0.76], dark = [0.13, 0.13, 0.16];
+    const top = [0.3, 0.29, 0.31], belly = [0.82, 0.82, 0.78], dark = [0.16, 0.16, 0.18];
     const addFur = (parent, geo, pos, opts, rot = null) => {
       const mat = furMaterial(opts);
       const mesh = new THREE.InstancedMesh(geo, mat, SHELLS);
@@ -138,10 +138,10 @@ export class Squirrel {
       // лоб чуть выше
       v.y += 0.006 * Math.max(0, d.y) * (1 - s);
     });
-    this.head = addFur(this.neck, headGeo, [0, 0.02, 0.05], { top: [0.22, 0.21, 0.24], belly, bellyDir: [0, -1, 0.75], bellyAmt: 0.9, furLen: 0.011, density: 34, tipLight: 0.2, comb: [0, -0.2, -0.7] });
+    this.head = addFur(this.neck, headGeo, [0, 0.02, 0.05], { top: [0.32, 0.31, 0.33], belly, bellyDir: [0, -1, 0.75], bellyAmt: 0.9, furLen: 0.011, density: 34, tipLight: 0.2, comb: [0, -0.2, -0.7] });
     const hc = new THREE.Vector3(0, 0.02, 0.05);
     // Щёки
-    for (const s of [-1, 1]) addFur(this.neck, ellipsoidGeometry(0.02, 0.018, 0.024, 3), [hc.x + s * 0.03, hc.y - 0.012, hc.z + 0.03], { top: [0.26, 0.25, 0.28], belly, bellyDir: [0, -1, 0.3], bellyAmt: 0.8, furLen: 0.01, density: 12, tipLight: 0.2 });
+    for (const s of [-1, 1]) addFur(this.neck, ellipsoidGeometry(0.02, 0.018, 0.024, 3), [hc.x + s * 0.03, hc.y - 0.012, hc.z + 0.03], { top: [0.34, 0.33, 0.35], belly, bellyDir: [0, -1, 0.3], bellyAmt: 0.8, furLen: 0.01, density: 12, tipLight: 0.2 });
     // Уши
     this.ears = [];
     for (const s of [-1, 1]) {
@@ -204,7 +204,7 @@ export class Squirrel {
       const t = i / (NT - 1);
       const r = 0.026 + 0.046 * Math.pow(Math.sin(t * Math.PI), 0.7) * (1 - t * 0.2);
       const mesh = addFur(this.root, ellipsoidGeometry(r * 1.25, r * 0.5, r, 3), [0, 0.14, -0.15 - i * 0.035], {
-        top: [0.18, 0.18, 0.21], belly: [0.55, 0.55, 0.55], bellyDir: [0, -1, 0], bellyAmt: 0.5,
+        top: [0.26, 0.26, 0.29], belly: [0.6, 0.6, 0.6], bellyDir: [0, -1, 0], bellyAmt: 0.5,
         furLen: 0.024 + 0.012 * Math.sin(t * Math.PI), density: 22, tipLight: 0.45, comb: [0, 0, 0.9],
       });
       this.tail.push({ mesh, pos: new THREE.Vector3(), target: new THREE.Vector3(), init: false, k: lerp(45, 12, t) });
@@ -257,8 +257,8 @@ export class Squirrel {
           vec3 col = mix(uBelly, uTop, topSide) * (0.78 + 0.44 * n);
           // светлая кромка перепонки
           col = mix(col, vec3(0.95, 0.95, 0.93), smoothstep(0.2, 0.0, 1.0 - vMemUv.x) * 0.6);
-          float edge = min(1.0 - vMemUv.x, min(vMemUv.y, 1.0 - vMemUv.y) * 2.5);
-          float fringe = smoothstep(0.0, 0.14, edge + (mnoise(vMemUv * vec2(90.0, 60.0)) - 0.5) * 0.16);
+          float edge = min(1.0 - vMemUv.x, min(vMemUv.y, 1.0 - vMemUv.y) * 2.0);
+          float fringe = smoothstep(0.0, 0.2, edge + (mnoise(vMemUv * vec2(60.0, 40.0)) - 0.5) * 0.28 + (mnoise(vMemUv * vec2(240.0, 160.0)) - 0.5) * 0.08);
           diffuseColor = vec4(col, fringe);
         }`);
     };
@@ -287,18 +287,18 @@ export class Squirrel {
     this.membranes.forEach((mb, idx) => {
       const s = mb.side;
       // опорные точки в мировых координатах → в координаты root
-      this.body.localToWorld(A.set(s * 0.07, -0.005, 0.09));
+      this.body.localToWorld(A.set(s * 0.07, 0.03, 0.095));
       this.elbows[idx].localToWorld(B.set(0, -0.008, 0.006));
-      this.body.localToWorld(D.set(s * 0.072, -0.012, -0.08));
+      this.body.localToWorld(D.set(s * 0.066, 0.028, -0.125));
       this.ankles[idx].localToWorld(C.set(0, -0.002, 0.012));
       for (const v of [A, B, C, D]) this.root.worldToLocal(v);
       // хрящевой вырост у запястья и щиколотки растягивает перепонку дальше лап
       B.addScaledVector(new THREE.Vector3().subVectors(B, A).normalize(), 0.03 * open + 0.01);
       C.addScaledVector(new THREE.Vector3().subVectors(C, D).normalize(), 0.03 * open + 0.01);
       // в полёте перепонка натянута горизонтально вбок — силуэт летяги почти квадратный
-      const reach = 0.17;
-      B.lerp(new THREE.Vector3(A.x + s * reach, A.y + 0.008, A.z + 0.015), open * 0.85);
-      C.lerp(new THREE.Vector3(D.x + s * reach, D.y + 0.008, D.z - 0.02), open * 0.85);
+      const reach = 0.25;
+      B.lerp(new THREE.Vector3(A.x + s * reach, A.y - 0.025, A.z + 0.05), open * 0.92);
+      C.lerp(new THREE.Vector3(D.x + s * reach * 0.9, D.y - 0.028, D.z - 0.02), open * 0.92);
       // при сложенных лапах перепонка прячется к боку
       const pos = mb.mesh.geometry.attributes.position;
       const p = new THREE.Vector3(), front = new THREE.Vector3(), back = new THREE.Vector3();
@@ -306,12 +306,21 @@ export class Squirrel {
         const v = j / (mb.NV - 1);
         for (let i = 0; i < mb.NU; i++) {
           const u = i / (mb.NU - 1);
-          front.lerpVectors(A, B, u);
-          back.lerpVectors(D, C, u);
+          // внешний край выпуклый: у запястья и щиколотки перепонка короче, посередине — шире
+          // скруглённый контур: у запястья и щиколотки перепонка уже, в середине — самая широкая
+          const bulge = lerp(1.0, 0.62 + 0.52 * Math.pow(Math.sin(v * Math.PI), 0.6), open);
+          const uu = Math.min(1, u * bulge);
+          front.lerpVectors(A, B, uu);
+          back.lerpVectors(D, C, uu);
           p.lerpVectors(front, back, v);
+          // задний край плавно уходит к основанию хвоста, передний — к шее
+          const taper = 1.0 - 0.12 * Math.pow(Math.abs(v - 0.5) * 2, 3) * u;
+          p.lerp(new THREE.Vector3().lerpVectors(A, D, v), 1 - taper);
           // прогиб и лёгкое натяжение в полёте
           const sag = Math.sin(u * Math.PI) * Math.sin(v * Math.PI);
           p.addScaledVector(localUp, -0.006 * sag * open - 0.004 * sag);
+          // мягко опущенный внешний край, чтобы не выглядело бумагой
+          p.addScaledVector(localUp, -0.012 * u * u * open * (0.6 + 0.4 * Math.sin(v * Math.PI)));
           // в сложенном виде — ближе к телу, чуть ниже
           const fold = 1 - open;
           const flank = new THREE.Vector3().lerpVectors(A, D, v).addScaledVector(new THREE.Vector3(s, 0, 0), 0.012 * u).addScaledVector(localUp, -0.02 * u);
@@ -378,7 +387,7 @@ export class Squirrel {
     this.body.rotation.set(c.pitch, 0, 0);
     this.body.position.y = 0.135 + c.lift + breath;
     this.torso.scale.setScalar(1 + breath * 2);
-    this.hips.forEach((h, i) => { const s = i === 0 ? -1 : 1; h.rotation.set(c.hip[i], 0, s * c.spread * 0.6); });
+    this.hips.forEach((h, i) => { const s = i === 0 ? -1 : 1; h.rotation.set(c.hip[i] - c.glide * 0.5, 0, s * (c.spread * 0.6 - c.glide * 0.55)); const k = 1 - 0.3 * c.glide; h.scale.set(k, k, 1 + 0.1 * c.glide); });
     this.knees.forEach((k, i) => { k.rotation.x = c.knee[i] * 0.9 - 0.3; });
     this.shoulders.forEach((s, i) => { const sg = i === 0 ? -1 : 1; s.rotation.set(c.shoulder[i], 0, sg * c.spread * 0.9); });
     this.elbows.forEach((e, i) => { e.rotation.x = -c.elbow[i]; });
@@ -423,7 +432,13 @@ export class Squirrel {
       this.root.localToWorld(tp);
       const seg = this.tail[i];
       if (!seg.init) { seg.pos.copy(tp); seg.init = true; }
-      else seg.pos.lerp(tp, 1 - Math.exp(-seg.k * dt));
+      else {
+        seg.pos.lerp(tp, 1 - Math.exp(-seg.k * dt));
+        // хвост может отставать лишь немного (сильнее к кончику), иначе на скорости он «отрывается»
+        const maxDev = 0.006 + 0.05 * t * t;
+        const dev = seg.pos.distanceTo(tp);
+        if (dev > maxDev) seg.pos.lerp(tp, 1 - maxDev / dev);
+      }
       seg.target.copy(tp);
     }
     // позиции и ориентация сегментов: +Z вдоль хвоста, тонкая ось Y перпендикулярна плоскости хвоста

@@ -48,7 +48,9 @@ export class UI {
         <div id="counters">
           <div class="counter"><span class="icon acorn"></span><span id="acorn-count">0</span><span class="dim" id="acorn-total"></span></div>
           <div class="counter"><span class="icon golden"></span><span id="golden-count">0</span><span class="dim" id="golden-total"></span></div>
+          <div class="counter small"><span>🐾</span><span id="fed-count">0</span><span class="dim" id="fed-total"></span><span class="dim">накормлено</span></div>
         </div>
+        <div id="inventory"></div>
         <div id="region"><div id="region-name"></div><div id="region-sub"></div></div>
         <div id="toast"></div>
         <div id="hint"></div>
@@ -126,9 +128,13 @@ export class UI {
 
   setAcorns(n, total) { this.$('acorn-count').textContent = n; this.$('acorn-total').textContent = `/ ${total}`; }
   setGolden(n, total) { this.$('golden-count').textContent = n; this.$('golden-total').textContent = `/ ${total}`; }
+  setFed(n, total) { this.$('fed-count').textContent = n; this.$('fed-total').textContent = `/ ${total}`; }
+  setInventory(inv, treats) {
+    this.$('inventory').innerHTML = treats.map((t) => `<div class="slot ${inv[t.id] > 0 ? 'has' : ''}" title="${t.name}"><span class="ic">${t.icon}</span><span class="n">${inv[t.id]}</span></div>`).join('');
+  }
 
-  showFinale(acorns, totalAcorns, golden, totalGolden) {
-    this.$('finale-text').innerHTML = `Ты дошла до вершины. Солнце садится, зажигаются звёзды.<br>Собрано желудей: <b>${acorns} / ${totalAcorns}</b>, золотых: <b>${golden} / ${totalGolden}</b>.<br>${golden === totalGolden ? 'Все золотые жёлуди найдены — ты настоящая путешественница!' : 'Золотые жёлуди прячутся на макушках деревьев вдоль всей тропы.'}`;
+  showFinale(acorns, totalAcorns, golden, totalGolden, fed = 0, totalFed = 0) {
+    this.$('finale-text').innerHTML = `Ты дошла до вершины. Солнце садится, зажигаются звёзды.<br>Собрано желудей: <b>${acorns} / ${totalAcorns}</b>, золотых: <b>${golden} / ${totalGolden}</b>.<br>Накормлено зверушек: <b>${fed} / ${totalFed}</b>.<br>${golden === totalGolden && fed === totalFed ? 'Все золотые жёлуди найдены и все друзья сыты — ты настоящая путешественница!' : 'Золотые жёлуди прячутся на макушках деревьев, а зверушки ждут лакомств у тропы.'}`;
     this.$('finale').classList.remove('hidden');
     try { document.exitPointerLock?.(); } catch {}
   }
@@ -142,8 +148,9 @@ export class UI {
     const p = Math.max(0, Math.min(1, (player.pos.z - HOME_Z) / (SUMMIT_Z - HOME_Z)));
     this.$('progress-fill').style.width = `${state.progress * 100}%`;
     this.$('progress-squirrel').style.left = `${p * 100}%`;
-    let hint = '';
-    if (player.state === 'climb') hint = 'W/S — вверх и вниз · A/D — вокруг ствола · Пробел — спрыгнуть';
+    let hint = this.animalHint || '';
+    if (hint) {}
+    else if (player.state === 'climb') hint = 'W/S — вверх и вниз · A/D — вокруг ствола · Пробел — спрыгнуть';
     else if (player.state === 'glide') hint = 'Планируем! Отпусти пробел, чтобы снизиться';
     else if (player.state === 'air') hint = 'Удерживай пробел, чтобы расправить перепонку и планировать';
     else if (player.state === 'swim') hint = 'Брр, холодно! Плыви к берегу';

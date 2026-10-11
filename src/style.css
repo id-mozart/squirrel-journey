@@ -41,3 +41,10 @@ button.secondary { background: rgba(255,255,255,0.08); }
 #progress-fill { height: 100%; background: linear-gradient(90deg, #7fb04a, #ffd27a); border-radius: 3px; width: 0; }
 #progress-marks .mark { position: absolute; top: -4px; width: 2px; height: 14px; background: rgba(255,255,255,0.5); transform: translateX(-1px); }
 #progress-squirrel { position: absolute; top: -7px; width: 14px; height: 14px; border-radius: 50%; background: #e08a3a; border: 2px solid #fff3dc; transform: translateX(-9px); box-shadow: 0 0 8px rgba(0,0,0,0.6); }
+
+.counter.small { font-size: 16px; opacity: 0.9; }
+#inventory { position: absolute; left: 22px; bottom: 24px; display: flex; gap: 8px; }
+#inventory .slot { width: 46px; height: 52px; border-radius: 10px; background: rgba(10,14,8,0.5); border: 1px solid rgba(255,220,160,0.18); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.45; transition: opacity 0.3s, transform 0.3s; }
+#inventory .slot.has { opacity: 1; border-color: rgba(255,220,160,0.6); box-shadow: 0 0 12px rgba(255,200,80,0.3); }
+#inventory .ic { font-size: 22px; line-height: 1; }
+#inventory .n { font-size: 14px; margin-top: 3px; }

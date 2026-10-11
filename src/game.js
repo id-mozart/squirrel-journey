@@ -18,6 +18,7 @@ import { Player } from './player.js';
 import { UI } from './ui.js';
 import { Audio } from './audio.js';
 import { Particles } from './particles.js';
+import { Creatures, TREATS } from './creatures.js';
 
 const FINAL_SHADER = {
   uniforms: { tDiffuse: { value: null }, uVignette: { value: 0.35 }, uTime: { value: 0 }, uFade: { value: 1 } },
@@ -125,6 +126,8 @@ export async function start() {
   scene.add(props.group);
   const particles = new Particles(world);
   scene.add(particles.group);
+  const creatures = new Creatures(world);
+  scene.add(creatures.group);
 
   ui.showLoading('Будим белку…', 0.96);
   await nextFrame();
@@ -209,6 +212,29 @@ export async function start() {
   };
 
   // ---------------------------------------------------------------- Сбор предметов
+  // лакомства и кормление зверушек
+  const feeding = () => {
+    const p = player.pos;
+    const got = creatures.collectNear(p.x, p.y + 0.1, p.z, 0.7);
+    for (const t of got) { ui.toast(`${t.icon} Нашла ${t.name}`); audio.pickup(); }
+    if (got.length) ui.setInventory(creatures.inventory, TREATS);
+    const a = creatures.nearestAnimal(p.x, p.z, 1.8);
+    state.nearAnimal = a;
+    if (a && !a.fed) {
+      const has = creatures.inventory[a.def.wants] > 0;
+      ui.animalHint = has ? `E — угостить: ${a.def.name} хочет ${a.want.name} ${a.want.icon}` : `${a.def.name} хочет ${a.want.name} ${a.want.icon} — поищи в лесу`;
+      if (has && player.interact) {
+        player.interact = false;
+        if (creatures.feed(a)) {
+          ui.setInventory(creatures.inventory, TREATS);
+          ui.setFed(creatures.fedCount(), creatures.totalAnimals);
+          ui.toast(a.def.thanks);
+          audio.golden();
+        }
+      }
+    } else ui.animalHint = '';
+  };
+
   const collect = () => {
     const p = player.pos;
     const picked = props.collectNear(p.x, p.y + 0.15, p.z, 0.55);
@@ -230,13 +256,13 @@ export async function start() {
     const sx = world.trailX(SUMMIT_Z);
     if (Math.hypot(player.pos.x - sx, player.pos.z - (SUMMIT_Z + 6)) < 9) {
       state.finale = true;
-      ui.showFinale(state.acorns, props.totalAcorns, state.golden, props.totalGolden);
+      ui.showFinale(state.acorns, props.totalAcorns, state.golden, props.totalGolden, creatures.fedCount(), creatures.totalAnimals);
       audio.finale();
     }
   };
 
   const save = () => {
-    try { localStorage.setItem('squirrel-journey', JSON.stringify({ x: player.pos.x, z: player.pos.z, maxZ: state.maxZ, acorns: state.acorns, golden: state.golden, collected: props.collectedIds() })); } catch {}
+    try { localStorage.setItem('squirrel-journey', JSON.stringify({ x: player.pos.x, z: player.pos.z, maxZ: state.maxZ, acorns: state.acorns, golden: state.golden, collected: props.collectedIds(), creatures: creatures.saveState() })); } catch {}
   };
 
   // ---------------------------------------------------------------- Цикл
@@ -265,6 +291,7 @@ export async function start() {
       else if (state.fps > 57 && dpr < Math.min(baseDPR, 1.5)) { dpr = Math.min(Math.min(baseDPR, 1.5), dpr + 0.25); resize(); }
     }
     if (state.started && !state.paused) {
+      feeding();
       player.update(dt, state.time);
       state.maxZ = Math.max(state.maxZ, player.pos.z);
       collect();
@@ -294,6 +321,7 @@ export async function start() {
     grass.update(camera, player.pos, state.time);
     props.update(camera, state.time, dt);
     particles.update(camera, player.pos, state.time, dt, state.region ? state.region.id : 0, state.night);
+    creatures.update(dt, state.time, player.pos);
     audio.update(dt, player, world, state);
     finalPass.uniforms.uTime.value = state.time;
     finalPass.uniforms.uFade.value = ui.fade;
@@ -319,11 +347,15 @@ export async function start() {
         player.teleport(saved.x, saved.z);
         state.maxZ = saved.maxZ; state.acorns = saved.acorns; state.golden = saved.golden;
         props.restoreCollected(saved.collected || []);
+        creatures.restoreState(saved.creatures);
         ui.setAcorns(state.acorns, props.totalAcorns); ui.setGolden(state.golden, props.totalGolden);
       } else {
         props.restoreCollected([]);
+        creatures.restoreState(null);
         ui.setAcorns(0, props.totalAcorns); ui.setGolden(0, props.totalGolden);
       }
+      ui.setInventory(creatures.inventory, TREATS);
+      ui.setFed(creatures.fedCount(), creatures.totalAnimals);
       state.started = true;
       audio.start();
       player.lockPointer();
@@ -337,7 +369,7 @@ export async function start() {
 
   frame();
   window.__game = {
-    world, player, state, scene, camera, renderer, props, vegetation, ui, sun, hemi,
+    world, player, state, scene, camera, renderer, props, vegetation, ui, sun, hemi, creatures,
     setNight: (n) => { state.night = n; },
     step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) tick(dt); },
     shot: (name) => new Promise((resolve) => { tick(1 / 60); canvas.toBlob((b) => fetch('/__shot?name=' + name, { method: 'POST', body: b }).then(() => resolve('saved ' + name))); }),
